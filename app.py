@@ -7,12 +7,13 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placements.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.secret_key = "secretkey"
 
 db = SQLAlchemy(app)
 
+# ======================
 # MODELS
-
-
+# ======================
 
 class Users(db.Model):
     __tablename__ = "users"
@@ -27,8 +28,6 @@ class Users(db.Model):
     is_active = db.Column(db.Boolean, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
-
     student_profile = db.relationship(
         "StudentProfile",
         back_populates="user",
@@ -42,7 +41,6 @@ class Users(db.Model):
     )
 
 
-# StudentProfile model
 class StudentProfile(db.Model):
     __tablename__ = "student_profiles"
 
@@ -61,7 +59,6 @@ class StudentProfile(db.Model):
     resume = db.Column(db.String(200))
     placement_status = db.Column(db.String(50), default="Not Placed")
 
-    # relation to User
     user = db.relationship("Users", back_populates="student_profile")
 
     applications = db.relationship(
@@ -70,7 +67,6 @@ class StudentProfile(db.Model):
     )
 
 
-# CompanyProfile model
 class CompanyProfile(db.Model):
     __tablename__ = "company_profiles"
 
@@ -96,7 +92,6 @@ class CompanyProfile(db.Model):
     )
 
 
-# Job model
 class Job(db.Model):
     __tablename__ = "jobs"
 
@@ -123,7 +118,6 @@ class Job(db.Model):
     )
 
 
-# Application model
 class Application(db.Model):
     __tablename__ = "applications"
 
@@ -147,15 +141,129 @@ class Application(db.Model):
     job = db.relationship("Job", back_populates="applications")
 
     student = db.relationship("StudentProfile", back_populates="applications")
-# App running
+
+
+# ======================
+# ROUTES
+# ======================
+
+@app.route("/")
+def index():
+    return render_template("index.html")
+
+
+# ----------------------
+# REGISTER
+# ----------------------
+
+@app.route("/register", methods=["GET", "POST"])
+def register():
+
+    if request.method == "POST":
+
+        name = request.form["name"]
+        email = request.form["email"]
+        password = request.form["password"]
+        role = request.form["role"]
+
+        if role == "admin":
+            return "Admin cannot be registered"
+
+        if Users.query.filter_by(email=email).first():
+            return "Email already registered"
+
+        hashed_password = generate_password_hash(password)
+
+        user = Users(
+            name=name,
+            email=email,
+            password=hashed_password,
+            role=role,
+            is_approved=False if role == "company" else True
+        )
+
+        db.session.add(user)
+        db.session.commit()
+
+        return redirect(url_for("login"))
+
+    return render_template("register.html")
+
+
+# ----------------------
+# LOGIN
+# ----------------------
+
+@app.route("/login", methods=["GET", "POST"])
+def login():
+
+    if request.method == "POST":
+
+        email = request.form["email"]
+        password = request.form["password"]
+
+        user = Users.query.filter_by(email=email).first()
+
+        if not user:
+            return "No user found"
+
+        if not check_password_hash(user.password, password):
+            return "Wrong password"
+
+        if user.role == "company" and not user.is_approved:
+            return "Company not approved yet"
+
+        session["user_id"] = user.id
+        session["role"] = user.role
+
+        if user.role == "admin":
+            return redirect(url_for("admin_dashboard"))
+
+        elif user.role == "company":
+            return redirect(url_for("company_dashboard"))
+
+        elif user.role == "student":
+            return redirect(url_for("student_dashboard"))
+
+    return render_template("login.html")
+
+
+# ----------------------
+# DASHBOARDS
+# ----------------------
+
+@app.route("/company_dashboard")
+def company_dashboard():
+    return "This is company dashboard"
+
+
+@app.route("/student_dashboard")
+def student_dashboard():
+    return "This is student dashboard"
+
+
+@app.route("/admin_dashboard")
+def admin_dashboard():
+    return "This is admin dashboard"
+
+
+# ======================
+# RUN APP
+# ======================
 
 if __name__ == "__main__":
 
     with app.app_context():
+
+        # recreate database (development only)
+        db.drop_all()
         db.create_all()
 
-        user = Users.query.filter_by(name='admin')
-        if not user:
+        # create admin user if not exists
+        admin = Users.query.filter_by(email="admin@gmail.com").first()
+
+        if not admin:
+
             admin_user = Users(
                 name="admin",
                 email="admin@gmail.com",
@@ -163,7 +271,10 @@ if __name__ == "__main__":
                 role="admin",
                 is_approved=True
             )
+
             db.session.add(admin_user)
             db.session.commit()
+
+            print("Admin user created!")
 
     app.run(debug=True)
