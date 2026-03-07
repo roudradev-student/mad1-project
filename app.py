@@ -11,16 +11,18 @@ app.secret_key = "secretkey"
 
 db = SQLAlchemy(app)
 
-# ======================
-# MODELS
-# ======================
+
+# Models Formation
+
+
+# User model
 
 class Users(db.Model):
     __tablename__ = "users"
 
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False)
     name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(100), nullable=False)
     contact_number = db.Column(db.String(15))
@@ -40,6 +42,8 @@ class Users(db.Model):
         uselist=False
     )
 
+
+#Student Profile model
 
 class StudentProfile(db.Model):
     __tablename__ = "student_profiles"
@@ -65,6 +69,8 @@ class StudentProfile(db.Model):
         "Application",
         back_populates="student"
     )
+
+# Company Profile model
 
 
 class CompanyProfile(db.Model):
@@ -92,6 +98,8 @@ class CompanyProfile(db.Model):
     )
 
 
+# Job model
+
 class Job(db.Model):
     __tablename__ = "jobs"
 
@@ -117,6 +125,7 @@ class Job(db.Model):
         back_populates="job"
     )
 
+#Application model
 
 class Application(db.Model):
     __tablename__ = "applications"
@@ -141,20 +150,18 @@ class Application(db.Model):
     job = db.relationship("Job", back_populates="applications")
 
     student = db.relationship("StudentProfile", back_populates="applications")
+    
+    
+# Routes
 
-
-# ======================
-# ROUTES
-# ======================
 
 @app.route("/")
 def index():
     return render_template("index.html")
 
 
-# ----------------------
-# REGISTER
-# ----------------------
+
+# Registration and Login
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -165,6 +172,7 @@ def register():
         email = request.form["email"]
         password = request.form["password"]
         role = request.form["role"]
+        contact_number = request.form["contact_number"]
 
         if role == "admin":
             return "Admin cannot be registered"
@@ -179,7 +187,8 @@ def register():
             email=email,
             password=hashed_password,
             role=role,
-            is_approved=False if role == "company" else True
+            is_approved=False if role == "company" else True,
+            contact_number=contact_number
         )
 
         db.session.add(user)
@@ -187,12 +196,12 @@ def register():
 
         return redirect(url_for("login"))
 
-    return render_template("register.html")
+    return render_template("regis.html")
 
 
-# ----------------------
-# LOGIN
-# ----------------------
+
+# Route for login
+
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -222,34 +231,19 @@ def login():
         elif user.role == "company":
             return redirect(url_for("company_dashboard"))
 
-        elif user.role == "student":
-            return redirect(url_for("student_dashboard"))
+        elif user.role == "employee":
+            return redirect(url_for("employee_dashboard"))
 
     return render_template("login.html")
 
 
-# ----------------------
-# DASHBOARDS
-# ----------------------
-
-@app.route("/company_dashboard")
-def company_dashboard():
-    return "This is company dashboard"
 
 
-@app.route("/student_dashboard")
-def student_dashboard():
-    return "This is student dashboard"
 
 
-@app.route("/admin_dashboard")
-def admin_dashboard():
-    return "This is admin dashboard"
 
+# Running the application
 
-# ======================
-# RUN APP
-# ======================
 
 if __name__ == "__main__":
 
@@ -259,7 +253,7 @@ if __name__ == "__main__":
         db.drop_all()
         db.create_all()
 
-        # create admin user if not exists
+        # creating admin user if not exists
         admin = Users.query.filter_by(email="admin@gmail.com").first()
 
         if not admin:

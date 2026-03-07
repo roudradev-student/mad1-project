@@ -1,6 +1,103 @@
-<form action="/reg" method="post">
-    <input type="text" name="name" placeholder="name">
-    <input type="text" name="email" placeholder="email">
-    <input type="text" name="password" placeholder="password">
-    <button type="submit">submit</button>
-</form>
+{% extends "base.html" %}
+{% block title %}Register{% endblock %}
+{% block content %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Form</title>
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="wrapper">
+
+    <h2>Create Your Account</h2>
+
+    <form action="/register" method="POST">
+
+        <label>Name</label>
+        <input type="text" name="name" required placeholder="Enter your name">
+
+        <label>Email</label>
+        <input type="email" name="email" required placeholder="Enter your email">
+
+        <label>Contact Number</label>
+        <input type="tel" name="contact_number" pattern="[0-9]{10}" required placeholder="Enter 10 digit number">
+        
+        <label>Role</label>
+        <select name="role">
+            <option value="employee">Employee</option>
+            <option value="company">Company</option>
+        </select>
+    
+        <label>Password</label>
+        <input type="password" name="password" required placeholder="Enter your password">
+       
+        
+        <button type="submit">Sign Up</button>
+
+    </form>
+    
+    <p class="login-link">
+        Already have an account? 
+        <a href="/login">Login</a>
+    </p>
+
+
+</div>
+
+</body>
+</html>
+
+<style>
+    body{
+    font-family: Arial;
+    background-color: #d11339;
+}
+
+.wrapper{
+    width: 350px;
+    margin: auto;
+    margin-top: 50px;
+    margin-bottom: 30px;
+    background: rgb(213, 174, 223);
+    padding: 20px;
+    border-radius: 8px;
+    backdrop-filter: blur(50px);
+}
+
+h2{
+    text-align: center;
+    font-family: 'Pacifico', cursive;
+    font-weight:bolder;
+    font-size: 40px;
+    font-style: italic;
+}
+
+form{
+    display: flex;
+    flex-direction: column;
+}
+
+input, select{
+    margin-bottom: 15px;
+    padding: 10px;
+}
+
+button{
+    padding: 10px;
+    background: rgb(2, 0, 27);
+    color: white;
+    border: none;
+    border-radius: 8px;
+}
+
+.login-link{
+    text-align: center;
+    margin-top: 15px;
+}
+</style>
+{% endblock %}
