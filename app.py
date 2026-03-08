@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placements.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.config["SECRET KEY"] = "rdbsecretkey017"
+app.config["SECRET_KEY"] = "rdbsecretkey017"
 
 db = SQLAlchemy(app)
 
@@ -241,12 +241,53 @@ def login():
 
 @app.route("/company_dashboard")
 def company_dashboard():
-    return "This is company dashboard"
+    all_users = Users.query.all()
+    return render_template("company_dashboard.html", users=all_users)   
+
+@app.route("/complete-company-profile", methods=["GET", "POST"])
+def complete_company_profile():
+
+    if not session.get('user_id'):
+        return redirect(url_for('login'))
+
+    user_id = session['user_id']
+    company = CompanyProfile.query.filter_by(user_id=user_id).first()
+
+    if request.method == "POST":
+
+        # CASE 1: Profile exists → UPDAT
+
+        if company:
+    
+            company.company_name = request.form["company_name"]
+            company.industry = request.form["industry"]
+            company.website = request.form["website"]
+            company.location = request.form["location"]
+            company.hr_contact = request.form["hr_contact"]
+
+            db.session.commit()
+            return redirect("/company_dashboard")
+        else:
+            
+            company = CompanyProfile(
+                user_id=user_id,
+                company_name=request.form["company_name"],
+                industry=request.form["industry"],
+                website=request.form["website"],
+                location=request.form["location"],
+                hr_contact=request.form["hr_contact"]
+            )   
+            db.session.add(company)
+
+            db.session.commit()
+
+            return redirect("/company_dashboard")
+    return render_template("company_profile.html")
 
 
-@app.route("/student_dashboard")
-def student_dashboard():
-    return "This is student dashboard"
+@app.route("/employee_dashboard")
+def employee_dashboard():
+    return render_template("employee_dashboard.html")
 
 
 @app.route("/admin_dashboard")
@@ -268,7 +309,6 @@ if __name__ == "__main__":
     with app.app_context():
 
         # recreate database (development only)
-        db.drop_all()
         db.create_all()
 
         # creating admin user if not exists
