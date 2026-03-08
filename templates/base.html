@@ -15,13 +15,23 @@
 
     <div class="menu">
         <a href="/">Home</a>
+        {% if session.get('user_id') %}
+           <a href="/logout">Logout</a>
+        {% endif %}
+        {% if not session.get('user_id') %}
         <a href="/login">Login</a>
-        <a href="/register">Register</a>
+        <a href="/register" class="nav-btn">Register</a>
+        {% endif %}
+        
     </div>
 </nav>
 
 <!-- Page Content -->
 {% block content %}{% endblock %}
+
+<footer>
+    © 2026 Placement Portal | All Rights Reserved
+</footer>
 
 </body>
 </html>

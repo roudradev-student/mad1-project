@@ -7,7 +7,7 @@ app = Flask(__name__)
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///placements.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-app.secret_key = "secretkey"
+app.config["SECRET KEY"] = "rdbsecretkey017"
 
 db = SQLAlchemy(app)
 
@@ -236,9 +236,27 @@ def login():
 
     return render_template("login.html")
 
+# Dashboards
 
 
+@app.route("/company_dashboard")
+def company_dashboard():
+    return "This is company dashboard"
 
+
+@app.route("/student_dashboard")
+def student_dashboard():
+    return "This is student dashboard"
+
+
+@app.route("/admin_dashboard")
+def admin_dashboard():
+    return "This is admin dashboard"
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect(url_for("login"))
 
 
 
