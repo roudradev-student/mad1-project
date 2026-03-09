@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<title>Student Profile Making</title>
+
+<style>
+        body {
+            font-family: Arial;
+            background: linear-gradient(120deg, #020617, #0f172a);
+            color: white;
+        }
+
+        .box {
+            width: 400px;
+            height: 400px;
+            margin-left: 540px;
+            margin-right: 0px;
+            margin-top: 100px;
+            margin-bottom: 155px;
+            padding-right: 40px;
+            padding-left: 30px;
+            padding-bottom:25 px;
+            padding-top: 29px;
+            background: rgba(235, 184, 232, 0.968);
+            border-radius: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: none;
+        }
+    
+    .box h2 {
+        text-align: center;
+        font-family: 'Pacifico', cursive;
+        color: rgba(188, 20, 36, 0.947);
+        font-size: 35px;
+        font-weight: 400;
+    }
+    
+    .btn {
+    padding: 8px 18px;
+    background: #030b31;
+    color: #ffffff !important;
+    border-radius: 6px;
+    font-weight: 600;
+    margin-left: 120px;
+    }
+
+   .btn:hover {
+    background: rgb(224, 195, 232);
+    color:   #030b31!important;
+     
+    }
+
+    
+
+
+
+
+
+</style>
+
+
+<body>
+
+    <div class="box">
+        <h2>Complete Student Profile</h2>
+
+        <form method="POST">
+
+            
+            <input type="text" name="department" value="{{ student.department if student else '' }}"
+                placeholder="Department" required>
+
+            <input type="number" step="0.1" name="cgpa" value="{{ student.cgpa if student else '' }}"
+                placeholder="CGPA" required>
+
+            <input type="text" name="resume" value="{{ student.resume if student else '' }}" placeholder="Resume Link">
+
+            <button type="submit" class="btn">Save Profile</button>
+
+        </form>
+    </div>
+
+</body>
+
+{% endblock %}

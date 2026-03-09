@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<title>Student Dashboard</title>
+
+<style>
+   *{
+    box-sizing:border-box;
+    font-family:Segoe UI, Arial, sans-serif;
+}
+
+body{
+    margin:0;
+    background:linear-gradient(120deg,#020617,#0f172a);
+    color:#e2e8f0;
+}
+
+/* container */
+
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:80px;
+}
+
+/* cards */
+
+.card{
+    background:rgba(3, 4, 50, 0.944);
+    border:1px solid #1e293b;
+    border-radius:12px;
+    padding:30px;
+    margin-bottom:30px;
+}
+
+.card h2{
+    margin-top: 7px;
+    font-size:40px;
+    font-weight:580;
+    font-family:'Pacifico', cursive;
+    color:rgba(188, 20, 36, 0.947);
+    text-align:center;
+}
+
+.card p{
+    color:#d7dbe0;
+    margin:8px 0;
+}
+
+/* buttons */
+
+.btn{
+    padding:10px 16px;
+    border:none;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-top:10px;
+    margin-right:10px;
+    transition:0.3s;
+}
+
+/* apply button */
+
+.apply{
+    background:#38bdf8;
+    color:#020617;
+}
+
+.apply:hover{
+    background:#0ea5e9;
+    transform:scale(1.05);
+}
+
+/* incomplete profile */
+
+.incomplete{
+    color:#ef4444;
+    font-weight:bold;
+}
+
+/* section title */
+
+h2{
+    color:#38bdf8;
+    margin-top:40px;
+}
+</style>
+</head>
+
+<body>
+    <div class="container">
+        
+        
+        <!-- PROFILE SECTION -->
+        <div class="card">
+            <h2>Student Profile</h2>
+
+            {% if student %}
+            
+            <p><b>Department:</b> {{ student.department }}</p>
+            <p><b>CGPA:</b> {{ student.cgpa }}</p>
+            <p><b>Resume:</b> {{ student.resume }}</p>
+            {% else %}
+            <p class="incomplete">⚠ Profile Incomplete</p>
+            {% endif %}
+
+            <br>
+
+            <a href="/complete-student-profile">
+                <button class="btn">Complete / Edit Profile</button>
+            </a>
+        </div>
+
+        <a href="/my-applications">
+            <button class="btn" style="background:#f97316; color:black;">
+                View Application History
+            </button>
+        </a>
+
+        <br><br>
+        <!-- JOBS SECTION -->
+        <h2>Available Jobs</h2>
+        {% for job in jobs %}
+        <div class="card">
+
+            <p><b>Company:</b> {{ job.company.company_name }}</p>
+            <p><b>Title:</b> {{ job.title }}</p>
+            <p><b>Skills:</b> {{ job.skills }}</p>
+            <p><b>Salary:</b> {{ job.salary }}</p>
+
+            {% if job.id in applied_jobs %}
+            <button class="btn" style="background: gray; cursor: not-allowed;">
+                Applied ✓ ({{ applied_jobs[job.id] }})
+            </button>
+            {% else %}
+            <a href="/apply-job/{{ job.id }}">
+                <button class="btn apply">Apply Job</button>
+            </a>
+            {% endif %}
+            <a href="/company-profile/{{ job.company.id }}">
+                <button class="btn" style="background:#facc15;">
+                    View Company Details
+                </button>
+            </a>
+        </div>
+        {% endfor %}
+
+    </div>
+
+    {% endblock %}

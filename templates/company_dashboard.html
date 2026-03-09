@@ -1,26 +1,290 @@
-{% extends "base.html" %}
-{% block title %}Company Dashboard{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block content %}
 
-<div>
-<a href="/complete-company-profile" class="btn">Company Profile</a>
+<head>
+<meta charset="UTF-8">
+<title>Company Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+<div class="navbar">
+<h2>Company Dashboard</h2>
+<a href="/logout">
+<button class="logout">Logout</button>
+</a>
 </div>
 
+<div class="container">
+
+<div class="card">
+<h3>Company Profile</h3>
+
+{% if company and company.company_name %}
+
+<p><b>Name:</b> {{ company.company_name }}</p>
+<p><b>Industry:</b> {{ company.industry }}</p>
+<p><b>Website:</b> {{ company.website }}</p>
+<p><b>Location:</b> {{ company.location }}</p>
+<p><b>Size:</b> {{ company.company_size }}</p>
+<p><b>Description:</b> {{ company.description }}</p>
+
+{% else %}
+
+<p>⚠ Profile Incomplete</p>
+
+{% endif %}
+
+<br>
+
+<a href="/complete-company-profile">
+<button>Complete / Edit Profile</button>
+</a>
+
+<hr>
+
+<div class="card">
+ <h4>Shortlisted Students</h4>
+</div>
+
+{% if shortlisted %}
+{% for app in shortlisted %}
+
+<div>
+
+<p><b>Name:</b> {{ app.student.user.name }}</p>
+<p><b>Email:</b> {{ app.student.user.email }}</p>
+
+<a href="/toggle-status/{{ app.id }}/Applied">
+<button>Remove from Shortlist</button>
+</a>
+
+<a href="/company/student/{{ app.student_id }}">
+<button>View Details</button>
+</a>
+
+</div>
+
+{% endfor %}
+
+{% else %}
+
+<p>No shortlisted students yet.</p>
+
+{% endif %}
+
+<h2>Your Job Posts</h2>
+
+<a href="/post-job">
+<button>Post New Job</button>
+</a>
+
+<br><br>
+
+{% if jobs %}
+{% for item in jobs %}
+{% set job = item.job %}
+
+<div>
+
+<p><b>Title:</b> {{ job.title }}</p>
+<p><b>Skills:</b> {{ job.skills }}</p>
+<p><b>Experience:</b> {{ job.experience }}</p>
+<p><b>Salary:</b> {{ job.salary }}</p>
+
+<p>
+<b>Total Applications:</b>
+{{ item.total_apps }}
+</p>
+
+<p>
+<b>Admin Approval:</b>
+
+{% if job.is_approved == 0 %}
+Pending
+{% else %}
+Approved
+{% endif %}
+
+</p>
+
+<p>
+<b>Job Status:</b>
+
+{% if job.is_closed %}
+Closed
+{% else %}
+Active
+{% endif %}
+
+</p>
+
+<br>
+
+<a href="/job-applications/{{ job.id }}">
+<button>View Applicants</button>
+</a>
+
+<a href="/toggle-job/{{ job.id }}">
+<button>
+
+{% if job.is_closed %}
+Activate Job
+{% else %}
+Close Job
+{% endif %}
+
+</button>
+</a>
+
+<br><br>
+
+<a href="/edit-job/{{ job.id }}">
+<button>Edit</button>
+</a>
+
+<br><br>
+<form action="/delete-job/{{ job.id }}" method="POST">
+
+<button>Delete</button>
+
+</form>
+
+</div>
+
+{% endfor %}
+
+{% else %}
+
+<p>No jobs posted yet.</p>
+
+{% endif %}
+
+</div>
+
+</body>
+</html>
+
 <style>
-  
-.btn{margin-left: 40px;
-   margin-top: 50px ;
-   padding: 20px 30px;
-   background: #020617;
-   color: #ffffff !important;
-   border-radius: 6px;
-   font-weight: 600;
-   display:inline-flex;
-   text-align: center;
+    
+*{
+    box-sizing:border-box;
+    font-family:Segoe UI, Arial, sans-serif;
+}
+
+body{
+    margin:0;
+    background:linear-gradient(120deg,#020617,#0f172a);
+    color:#e2e8f0;
+}
+
+/* navbar */
+
+.navbar {
+    background: rgba(188, 20, 36, 0.947);
+    backdrop-filter: blur(10px);
+    padding: 18px 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #1e293b;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.navbar h2{
+    color:#e0e4e6;
+    margin:0;
+}
+
+/* container */
+
+.container{
+    max-width:900px;
+    margin:auto;
+    padding:80px;
+}
+
+/* cards */
+
+.card{
+    background:rgba(255,255,255,0.05);
+    border:1px solid #1e293b;
+    border-radius:12px;
+    padding:30px;
+    margin-bottom:30px;
+    
+}
+
+.card h3{
+        font-size:30px;
+        font-weight:580;
+        font-family: 'Pacifico', cursive;
+        color:rgba(188, 20, 36, 0.947);
+        font-size: 60px ;
+        text-align: center;
+    }
+
+
+.card p{
+    color:#cbd5e1;
+    margin:8px 0;
+}
+
+/* buttons */
+
+button{
+    padding:10px 16px;
+    border:none;
+    border-radius:6px;
+    font-weight:bold;
+    cursor:pointer;
+    margin-right:10px;
+    transition:0.3s;
+}
+
+/* blue buttons */
+
+.complete{
+    background:#38bdf8;
+    color:#020617;
+}
+
+.complete:hover{
+    background:#0ea5e9;
+    transform:scale(1.05);
+}
+
+/* red buttons */
+
+.logout{
+        margin-left: 40px;
+    padding: 8px 18px;
+    background: #030b31;
+    color: #ffffff !important;
+    border-radius: 6px;
+    font-weight: 600;
+}
+
+.logout:hover{
+     background: rgb(224, 195, 232);
+     color:   #030b31!important;
+};
+}
+
+/* section title */
+
+.section-title{
+    color:#38bdf8;
+}
+
+/* incomplete profile */
+
+.incomplete{
+    color:#ef4444;
+    font-weight:bold;
 }
 </style>
-
-
-
-{% endblock %}

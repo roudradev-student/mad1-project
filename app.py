@@ -53,7 +53,8 @@ class StudentProfile(db.Model):
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        unique= True
     )
 
     cgpa = db.Column(db.Float)
@@ -81,7 +82,8 @@ class CompanyProfile(db.Model):
     user_id = db.Column(
         db.Integer,
         db.ForeignKey("users.id"),
-        nullable=False
+        nullable=False,
+        unique= True    
     )
 
     company_name = db.Column(db.String(150))
@@ -113,9 +115,11 @@ class Job(db.Model):
     description = db.Column(db.Text)
     title = db.Column(db.String(150))
     skills = db.Column(db.String(200))
+    experience = db.Column(db.String(200))
     salary = db.Column(db.String(50))
     job_type = db.Column(db.String(50), default="Full-time")
     is_approved = db.Column(db.Boolean, default=False)
+    is_closed = db.Column(db.Boolean, default=False)
     posted_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     company = db.relationship("CompanyProfile", back_populates="jobs")
@@ -155,10 +159,41 @@ class Application(db.Model):
 # Routes
 
 
+
 @app.route("/")
 def index():
     return render_template("index.html")
 
+
+# Route for job posting by company
+@app.route('/job-posting', methods=['GET', 'POST'])
+def job_post():
+
+    if request.method == 'POST':
+
+        if 'user_id' not in session:
+            return redirect('/login')
+
+        company = CompanyProfile.query.filter_by(user_id=session['user_id']).first()
+
+        if not company:
+            return "Please complete company profile first"
+
+        job = Job(
+            company_id=company.id,
+            title=request.form['title'],
+            experience=request.form['experience'],
+            description=request.form['description'],
+            skills=request.form['skills'],
+            salary=request.form['salary']
+        )
+
+        db.session.add(job)
+        db.session.commit()
+
+        return redirect('/company_dashboard')
+
+    return render_template('job_posting.html')
 
 
 # Registration and Login
@@ -232,17 +267,65 @@ def login():
             return redirect(url_for("company_dashboard"))
 
         elif user.role == "employee":
-            return redirect(url_for("employee_dashboard"))
+            return redirect(url_for("student_dashboard"))
 
     return render_template("login.html")
 
 # Dashboards
 
+@app.route("/company-details/<int:company_id>")
+def company_details(company_id):
+
+    # get company profile
+    company = CompanyProfile.query.filter_by(id=company_id).first()
+
+    if not company:
+        return "Company not found", 404
+
+    return render_template(
+        "company_details.html",
+        company=company
+    )
 
 @app.route("/company_dashboard")
 def company_dashboard():
-    all_users = Users.query.all()
-    return render_template("company_dashboard.html", users=all_users)   
+    if "user_id" not in session:
+        return redirect("/login")
+
+    company = CompanyProfile.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if not company:
+        return redirect("/complete-company-profile")
+
+    jobs = Job.query.filter_by(company_id=company.id).all()
+
+    job_data = []
+    all_shortlisted = []   #  New list to collect shortlisted applications across all jobs
+
+    for job in jobs:
+        total_apps = Application.query.filter_by(job_id=job.id).count()
+
+        shortlisted = Application.query.filter_by(
+            job_id=job.id,
+            status="Shortlisted"
+        ).all()
+
+        all_shortlisted.extend(shortlisted)  # collect all
+
+        job_data.append({
+            "job": job,
+            "total_apps": total_apps
+        })
+
+    return render_template(
+        "company_dashboard.html",
+        company=company,
+        jobs=job_data,
+        shortlisted=all_shortlisted   # Pass the collected shortlisted applications to the template
+    )
+
 
 @app.route("/complete-company-profile", methods=["GET", "POST"])
 def complete_company_profile():
@@ -255,10 +338,8 @@ def complete_company_profile():
 
     if request.method == "POST":
 
-        # CASE 1: Profile exists → UPDAT
-
         if company:
-    
+
             company.company_name = request.form["company_name"]
             company.industry = request.form["industry"]
             company.website = request.form["website"]
@@ -266,9 +347,11 @@ def complete_company_profile():
             company.hr_contact = request.form["hr_contact"]
 
             db.session.commit()
+
             return redirect("/company_dashboard")
+
         else:
-            
+
             company = CompanyProfile(
                 user_id=user_id,
                 company_name=request.form["company_name"],
@@ -276,23 +359,134 @@ def complete_company_profile():
                 website=request.form["website"],
                 location=request.form["location"],
                 hr_contact=request.form["hr_contact"]
-            )   
-            db.session.add(company)
+            )
 
+            db.session.add(company)
             db.session.commit()
 
             return redirect("/company_dashboard")
+
     return render_template("company_profile.html")
 
 
-@app.route("/employee_dashboard")
-def employee_dashboard():
-    return render_template("employee_dashboard.html")
 
 
 @app.route("/admin_dashboard")
 def admin_dashboard():
     return "This is admin dashboard"
+
+
+@app.route("/job-applications/<int:job_id>")
+def view_applications(job_id):
+    applications = Application.query.filter_by(job_id=job_id).all()
+
+    return render_template(
+        "applications.html",
+        applications=applications
+    )
+
+
+
+#Student dashboard and job application
+
+@app.route("/student_dashboard")
+def student_dashboard():
+
+    # check login
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user_id = session["user_id"]
+
+    # get student profile
+    student = StudentProfile.query.filter_by(user_id=user_id).first()
+
+    # get search value from URL
+    search = request.args.get("search")
+
+    # base query (only approved & open jobs)
+    jobs_query = Job.query.filter_by(is_approved=True, is_closed=False)
+
+    # if search exists -> filter
+    if search:
+        jobs_query = jobs_query.join(CompanyProfile).filter(
+            (CompanyProfile.company_name.ilike(f"%{search}%")) |
+            (Job.title.ilike(f"%{search}%")) |
+            (Job.skills.ilike(f"%{search}%"))
+        )
+
+    jobs = jobs_query.all()
+
+    # store applied jobs
+    applied_jobs = {}
+
+    if student:
+        for app in student.applications:
+            applied_jobs[app.job_id] = app.status
+
+    return render_template(
+        "employee_dashboard.html",
+        student=student,
+        jobs=jobs,
+        applied_jobs=applied_jobs
+    )
+
+@app.route("/apply-job/<int:job_id>")
+def apply_job(job_id):
+    if "user_id" not in session:
+        return redirect("/login")
+
+    student = StudentProfile.query.filter_by(
+        user_id=session["user_id"]).first()
+
+    if not student:
+        return "Complete profile first!"
+
+    # Check duplicate apply
+    existing = Application.query.filter_by(
+        job_id=job_id,
+        student_id=student.id
+    ).first()
+
+    if existing:
+        return "Already applied!"
+
+    app = Application(
+        job_id=job_id,
+        student_id=student.id
+    )
+
+    db.session.add(app)
+    db.session.commit()
+
+    return redirect("/student_dashboard")
+
+
+@app.route("/complete-student-profile", methods=["GET", "POST"])
+def complete_student_profile():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user_id = session["user_id"]
+
+    student = StudentProfile.query.filter_by(user_id=user_id).first()
+
+    if request.method == "POST":
+
+        if not student:
+            student = StudentProfile(user_id=user_id)
+            db.session.add(student)
+
+        student.department = request.form["department"]
+        student.cgpa = request.form["cgpa"]
+        student.resume = request.form["resume"]
+
+        db.session.commit()
+
+        return redirect("/student_dashboard")
+
+    return render_template("complete-student-profile.html", student=student)
+
 
 @app.route("/logout")
 def logout():
