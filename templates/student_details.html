@@ -1,0 +1,176 @@
+</head>
+    <title>{% block title %}Niyoga{% endblock %}</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <h2 class="hdd">Student Full Profile</h2>
+
+    <div class="box">
+        <p style="color: white; font-weight: bold;font-size: 30px;"><b>Name:</b> {{ student.user.name }}</p>
+        <p style="color: white; font-weight: bold;"><b>Email:</b> {{ student.user.email }}</p>
+        <p style="color: white; font-weight: bold;"><b>Department:</b> {{ student.department }}</p>
+        <p style="color: white; font-weight: bold;"><b>Year:</b> {{ student.year }}</p>
+        <p style="color: white; font-weight: bold;"><b>CGPA:</b> {{ student.cgpa }}</p>
+        <p style="color: white; font-weight: bold;"><b>Skills:</b> {{ student.skills }}</p>
+        <p><b>Placement Status:</b> {{ student.placement_status }}</p>
+
+        {% if student.resume %}
+        <a href="{{ url_for('static', filename='uploads/' + student.resume) }}">
+            <button class="btn">Download Resume</button>
+        </a>
+        {% endif %}
+    </div>
+    <h3 class="com">Total Jobs Applied in Your Company: {{ total_applied }}</h3>
+
+    {% if applications %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Job Title</th>
+                <th>Description</th>
+                <th>Required Skills</th>
+                <th>Salary</th>
+                <th>Job Type</th>
+                <th>Status</th>
+                <th>Job Status</th>
+                <th>Applied Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for app in applications %}
+            <tr>
+                <td>{{ app.job.title }}</td>
+
+                <td style="max-width:200px;">
+                    {{ app.job.description }}
+                </td>
+
+                <td>{{ app.job.skills }}</td>
+
+                <td>{{ app.job.salary }}</td>
+
+                <td>{{ app.job.job_type }}</td>
+
+                <!-- Application Status -->
+                <td>
+                    {% if app.status == "Applied" %}
+                    <span style="color:#46d3b9f4;font-weight: bold;">Applied</span>
+                    {% elif app.status == "Shortlisted" %}
+                    <span style="color:#e1f814;font-weight: bold;">Shortlisted</span>
+                    {% elif app.status == "Selected" %}
+                    <span style="color:#12950d;font-weight: bold;">Selected</span>
+                    {% else %}
+                    <span style="color:#de0505;">Rejected</span>
+                    {% endif %}
+                </td>
+
+                <!-- Job Open / Closed -->
+                <td>
+                    {% if app.job.is_closed %}
+                    <span style="color:#8a0f97;font-weight: bold;">Closed</span>
+                    {% else %}
+                    <span style="color:#0bb30e;font-weight: bold;">Open</span>
+                    {% endif %}
+                </td>
+
+                <td>{{ app.applied_at.strftime("%d %b %Y") }}</td>
+
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% else %}
+    <p>This student has not applied to any job of your company.</p>
+    {% endif %}
+
+    <br><br>
+
+    <a href="/company_dashboard">
+        <button class="btn">⬅ Back</button>
+    </a>
+
+</body>
+
+</html>
+
+ <style>
+        body {
+            font-family: Arial;
+            background-image: url("/static/dashboard meet image.png");
+            background-size: cover;
+            padding: 40px;
+        }
+
+        .box {
+            background: rgba(188, 20, 36, 0.947);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            margin-left: 80px;
+            margin-right: 80px;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            background: #0a8406;
+            color: white;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+td {
+    padding:10px;
+    border:1px solid #334155;
+    color:#e2e8f0;    
+    font-weight:500;   
+}
+
+th {
+    background:rgba(188, 20, 36, 0.947);
+    font-weight:700;   /* header more bold */
+    color:white;
+}
+    
+ .com{
+    color:#e0e4e6;
+    font-size: 30px;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-style: oblique;
+    font-weight: 500;
+    margin-top: 35px;
+    text-align: center;
+}  
+
+.box{
+    text color: white;
+    border:1px solid #1e293b;
+    border-radius:12px;
+    padding:20px;
+    margin-top:35px;
+    margin-left: 170px;
+    margin-right: 150px;
+    width: 990px;
+}
+  
+.hdd{
+    text-align: center;
+    font-family: 'Pacifico', cursive;
+    color: rgba(254, 247, 248, 0.947);
+    font-size: 60px;
+    font-weight: 500;
+
+</style>
+

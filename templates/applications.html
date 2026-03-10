@@ -127,7 +127,7 @@
     <br>
 
     <!-- SHORTLIST -->
-    <a href="/toggle-status/{{ app.id }}/shortlist">
+    <a href="/switch-status/{{ app.id }}/shortlist">
         <button class="btn shortlist">
             {% if app.status == "Shortlisted" %}
                 Unshortlist
@@ -138,7 +138,7 @@
     </a>
 
     <!-- SELECT -->
-    <a href="/toggle-status/{{ app.id }}/select">
+    <a href="/switch-status/{{ app.id }}/select">
         <button class="btn select">
             {% if app.status == "Selected" %}
                Unselect
@@ -149,7 +149,7 @@
     </a>
 
     <!-- REJECT -->
-    <a href="/toggle-status/{{ app.id }}/reject">
+    <a href="/switch-status/{{ app.id }}/reject">
         <button class="btn reject">
             {% if app.status == "Rejected" %}
                 Unreject

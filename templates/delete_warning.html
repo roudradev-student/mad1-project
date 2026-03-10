@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block title %}Warning{% endblock %}
+{% block content %}
+
+<style>
+.container {
+    width: 600px;
+    margin-top: 300px;
+    height: 300px;
+    text-align: center;
+    background-image: url("/static/dashboard image.png");
+    background-size: cover;
+    background-position: center;
+}
+
+.card {
+    background: rgba(255,255,255,0.05);
+    margin-top: 50px;
+    padding: 30px;
+    border-radius: 10px;
+    gap: 40px;
+}
+
+.btn {
+    padding: 10px 15px;
+    margin: 10px;
+    border: none;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.danger {
+    background: #ef4444;
+    color: white;
+}
+
+.safe {
+    background: #22c55e;
+    color: black;
+}
+</style>
+
+<div class="container">
+    <div class="card">
+
+        <h2 style="font-size: 70px;font-weight: 600; color: #ba1414;">⚠ Warning</h2>
+        <br>
+        <p>
+            This job has <b>{{ application_count }}</b> application(s).
+        </p>
+
+
+
+        <p style="font-size: 18px;font-weight: 600; color: #ffffff;  ">
+            If you delete this job, all applications will also be removed.
+        </p>
+        <br><br>
+        <!-- Confirm Delete -->
+        <form action="/confirm-delete/{{ job.id }}" method="POST" style="display:inline;">
+            <button class="btn danger">Yes, Delete Anyway</button>
+        </form>
+
+        <!-- Cancel -->
+        <a href="/company_dashboard">
+            <button class="btn safe">Cancel</button>
+        </a>
+
+    </div>
+</div>
+
+{% endblock %}

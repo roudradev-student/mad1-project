@@ -289,6 +289,7 @@ def company_details(company_id):
 
 @app.route("/company_dashboard")
 def company_dashboard():
+
     if "user_id" not in session:
         return redirect("/login")
 
@@ -302,9 +303,12 @@ def company_dashboard():
     jobs = Job.query.filter_by(company_id=company.id).all()
 
     job_data = []
-    all_shortlisted = []   #  New list to collect shortlisted applications across all jobs
+
+    all_shortlisted = []
+    all_selected = []
 
     for job in jobs:
+
         total_apps = Application.query.filter_by(job_id=job.id).count()
 
         shortlisted = Application.query.filter_by(
@@ -312,7 +316,13 @@ def company_dashboard():
             status="Shortlisted"
         ).all()
 
-        all_shortlisted.extend(shortlisted)  # collect all
+        selected = Application.query.filter_by(
+            job_id=job.id,
+            status="Selected"
+        ).all()
+
+        all_shortlisted.extend(shortlisted)
+        all_selected.extend(selected)
 
         job_data.append({
             "job": job,
@@ -323,8 +333,73 @@ def company_dashboard():
         "company_dashboard.html",
         company=company,
         jobs=job_data,
-        shortlisted=all_shortlisted   # Pass the collected shortlisted applications to the template
+        shortlisted=all_shortlisted,
+        selected=all_selected
     )
+
+@app.route("/delete-job/<int:job_id>", methods=["POST"])
+def delete_job(job_id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "company":
+        return "Unauthorized", 403
+
+    user_id = session["user_id"]
+
+    company = CompanyProfile.query.filter_by(user_id=user_id).first()
+    if not company:
+        return "Company profile not found", 404
+
+    job = Job.query.filter_by(id=job_id, company_id=company.id).first()
+    if not job:
+        return "Job not found", 404
+
+    # 🔥 Check if applications exist
+    application_count = Application.query.filter_by(job_id=job.id).count()
+
+    if application_count > 0:
+        return render_template(
+            "delete_warning.html",
+            job=job,
+            application_count=application_count
+        )
+
+    # If no applications → delete directly
+    db.session.delete(job)
+    db.session.commit()
+
+    return redirect("/company_dashboard")
+
+
+
+@app.route("/confirm-delete/<int:job_id>", methods=["POST"])
+def confirm_delete(job_id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "company":
+        return "Unauthorized", 403
+
+    user_id = session["user_id"]
+
+    company = CompanyProfile.query.filter_by(user_id=user_id).first()
+    if not company:
+        return "Company not found", 404
+
+    job = Job.query.filter_by(id=job_id, company_id=company.id).first()
+    if not job:
+        return "Job not found", 404
+
+    # delete related applications first
+    Application.query.filter_by(job_id=job.id).delete()
+
+    db.session.delete(job)
+    db.session.commit()
+
+    return redirect("/company_dashboard")
 
 
 @app.route("/complete-company-profile", methods=["GET", "POST"])
@@ -371,9 +446,8 @@ def complete_company_profile():
 
 
 
-@app.route("/admin_dashboard")
-def admin_dashboard():
-    return "This is admin dashboard"
+
+
 
 
 @app.route("/job-applications/<int:job_id>")
@@ -384,6 +458,159 @@ def view_applications(job_id):
         "applications.html",
         applications=applications
     )
+
+@app.route("/company/student/<int:student_id>")
+def view_student_profile(student_id):
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "company":
+        return "Unauthorized", 403
+
+    user_id = session["user_id"]
+
+    company = CompanyProfile.query.filter_by(user_id=user_id).first()
+    if not company:
+        return "Company profile not found", 404
+
+    student = StudentProfile.query.filter_by(id=student_id).first()
+    if not student:
+        return "Student not found", 404
+
+    # using relationship instead of join
+    applications = [
+        app for app in student.applications
+        if app.job.company_id == company.id
+    ]
+
+    total_applied = len(applications)
+
+    return render_template(
+        "student_details.html",
+        student=student,
+        applications=applications,
+        total_applied=total_applied
+    )
+
+    
+@app.route("/switch-status/<int:app_id>/<string:action>")
+def switch_status(app_id, action):
+    if "user_id" not in session:
+        return redirect("/login")
+
+    application = Application.query.get_or_404(app_id)
+
+    if action == "shortlist":
+        if application.status == "Shortlisted":
+            application.status = "Applied"   # unshortlist
+        else:
+            application.status = "Shortlisted"
+
+    elif action == "select":
+        if application.status == "Selected":
+            application.status = "Shortlisted"   # unselect
+        else:
+            application.status = "Selected"
+
+    elif action == "reject":
+        if application.status == "Rejected":
+            application.status = "Applied"   # unreject
+        else:
+            application.status = "Rejected"
+
+    db.session.commit()
+
+    return redirect(request.referrer)
+
+
+@app.route("/switch-job/<int:job_id>")
+def switch_job(job_id):
+
+    # simple login check
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "company":
+        return "Unauthorized", 403
+
+    # get company
+    company = CompanyProfile.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if not company:
+        return "Company not found"
+
+    # get job that belongs to this company
+    job = Job.query.filter_by(
+        id=job_id,
+        company_id=company.id
+    ).first()
+
+    if not job:
+        return "Job not found"
+
+    # switch  status
+    if job.is_closed:
+        job.is_closed = False
+    else:
+        job.is_closed = True
+
+    db.session.commit()
+
+    # go back to dashboard
+    return redirect("/company_dashboard")
+
+
+@app.route("/edit-job/<int:job_id>", methods=["GET", "POST"])
+def edit_job(job_id):
+
+    # basic login check
+    if "user_id" not in session:
+        return redirect("/login")
+
+    if session.get("role") != "company":
+        return "Unauthorized", 403
+
+    # get company of logged in user
+    company = CompanyProfile.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if not company:
+        return "Company profile not found"
+
+    # make sure job belongs to this company
+    job = Job.query.filter_by(
+        id=job_id,
+        company_id=company.id
+    ).first()
+
+    if not job:
+        return "Job not found"
+
+    # if form submitted
+    if request.method == "POST":
+
+        # updating fields
+        job.title = request.form["title"]
+        job.skills = request.form["skills"]
+        job.salary = request.form["salary"]
+
+        # small thing so admin can recheck
+        job.is_approved = False
+
+        db.session.commit()
+
+        return redirect("/company_dashboard")
+
+    # show edit form
+    return render_template("edit_job.html", job=job)
+
+
+
+
 
 
 
@@ -486,6 +713,16 @@ def complete_student_profile():
         return redirect("/student_dashboard")
 
     return render_template("complete-student-profile.html", student=student)
+
+
+
+#Admin routes for approving companies and jobs
+
+@app.route("/admin_dashboard")
+def admin_dashboard():
+    return "This is admin dashboard"
+
+
 
 
 @app.route("/logout")
