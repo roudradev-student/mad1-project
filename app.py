@@ -658,6 +658,28 @@ def student_dashboard():
         applied_jobs=applied_jobs
     )
 
+@app.route("/application-history")
+def application_history():
+
+    if "user_id" not in session:
+        return redirect("/login")
+
+    student = StudentProfile.query.filter_by(
+        user_id=session["user_id"]
+    ).first()
+
+    if not student:
+        return redirect("/complete-student-profile")
+
+    applications = Application.query.filter_by(
+        student_id=student.id
+    ).order_by(Application.applied_at.desc()).all()
+
+    return render_template(
+        "application_history.html",
+        applications=applications
+    )
+
 @app.route("/apply-job/<int:job_id>")
 def apply_job(job_id):
     if "user_id" not in session:

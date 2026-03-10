@@ -1,0 +1,117 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+   .container{
+    position: relative;
+    width:100%;
+    height:5000%;
+    margin-bottom:900px;
+}
+
+
+.container::before{
+    content:"";
+    position:absolute;
+    top:0;
+    left:0;
+    width:100%;
+    min-height: 100vh;
+
+    background-image:url("/static/registration page image.png");
+    background-size:cover;
+    background-position:20% 500%;
+
+    filter:blur(3px);
+
+    z-index:-1;
+}
+
+.card{
+    background: rgba(255,255,255,0.05);
+    padding:28px;
+    border-radius:10px;
+    margin-left: 230px;
+    margin-bottom:8px;
+    margin-top: 80px;
+    width: 800px;
+}
+
+    .status {
+        font-weight: bold;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+        font-size: 25px;
+        color: #eaedf2ed;
+    }
+
+    .applied {
+        color: #38bdf8;
+    }
+
+    .shortlisted {
+        color: #facc15;
+    }
+
+    .selected {
+        color: #22c55e;
+    }
+
+    .rejected {
+        color: #ef4444;
+    }
+
+    .hdd {
+        margin-top: 50px;
+        text-align: center;
+        color: #d51d35;
+        font-size: 60px;
+        font-family: "pacifico", cursive;
+        font-style: oblique;
+        font-weight: 600;
+    }
+
+</style>
+
+<div class="container">
+
+    <h2 class="hdd">Your Application History</h2>
+
+    {% if applications %}
+
+    {% for app in applications %}
+
+    <div class="card">
+
+        <p style="color: rgba(211, 229, 230, 0.997);font-weight:700; font-size: 27px;"><b style="color: rgb(250, 235, 215);font-weight:1000; font-size: 35px;">Company:</b> {{ app.job.company.company_name }}</p>
+        <p style="color: rgba(211, 229, 230, 0.997);font-weight: 600; font-size: 23px;"><b style="color: rgb(250, 235, 215);font-weight: 600; font-size: 30px;">Job Title:</b> {{ app.job.title }}</p>
+        <p style="color: rgba(211, 229, 230, 0.997);font-weight: 600; font-size: 23px;"><b style="color: rgb(250, 235, 215);font-weight: 600; font-size: 30px;">Salary:</b> {{ app.job.salary }}</p>
+
+        <p class="status"><b style="color: rgb(250, 235, 215);font-weight: 600; font-size: 30px;">
+            Status:</b>
+            <span class="
+{% if app.status == 'Applied' %}applied
+{% elif app.status == 'Shortlisted' %} shortlisted
+{% elif app.status == 'Selected' %}selected
+{% elif app.status == 'Rejected' %}rejected
+{% endif %}
+">
+                {{ app.status }}
+            </span>
+        </p>
+
+        <p style="color: rgba(238, 231, 231, 0.997);font-weight: 600; font-size: 23px;"><b style="color: rgb(253, 252, 252);font-weight: 600; font-size: 30px;">Applied On:</b> {{ app.applied_at }}</p>
+
+    </div>
+
+    {% endfor %}
+
+    {% else %}
+
+    <p>No applications yet.</p>
+
+    {% endif %}
+
+</div>
+
+{% endblock %}
