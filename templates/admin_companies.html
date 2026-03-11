@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Companies{% endblock %}
+
+{% block content %}
+
+<style>
+
+.page-title{
+    font-size:32px;
+    margin-bottom:20px;
+    color:#1e293b;
+}
+
+.search-form{
+    margin-bottom:25px;
+}
+
+.search-form input{
+    padding:10px;
+    width:250px;
+    border:1px solid #ccc;
+    border-radius:6px;
+}
+
+.search-form button{
+    padding:10px 16px;
+    border:none;
+    background:#2563eb;
+    color:white;
+    border-radius:6px;
+    cursor:pointer;
+}
+
+.search-form button:hover{
+    background:#1e40af;
+}
+
+.company-table{
+    width:100%;
+    border-collapse:collapse;
+    background:white;
+    border-radius:8px;
+    overflow:hidden;
+    box-shadow:0px 4px 10px rgba(0,0,0,0.1);
+}
+
+.company-table th{
+    background:#1e293b;
+    color:white;
+    padding:12px;
+    text-align:left;
+}
+
+.company-table td{
+    padding:12px;
+    border-bottom:1px solid #eee;
+}
+
+.company-table tr:hover{
+    background:#f1f5f9;
+}
+
+.action-btn{
+    padding:6px 12px;
+    border-radius:5px;
+    text-decoration:none;
+    font-size:14px;
+}
+
+.view-btn{
+    background:#10b981;
+    color:white;
+}
+
+.view-btn:hover{
+    background:#059669;
+}
+
+.switch-btn{
+    background:#f59e0b;
+    color:white;
+}
+
+.switch-btn:hover{
+    background:#d97706;
+}
+
+</style>
+
+
+<h2 class="page-title">All Companies</h2>
+
+<!-- Search Form -->
+<form method="GET" action="/admin/companies" class="search-form">
+
+    <input type="text" name="search"
+    placeholder="Search company name or industry">
+
+    <button type="submit">Search</button>
+
+</form>
+
+
+<table class="company-table">
+
+<tr>
+<th>Company</th>
+<th>Industry</th>
+<th>Location</th>
+<th>Action</th>
+</tr>
+
+{% for c in companies %}
+
+<tr>
+
+<td>{{ c.company_name }}</td>
+<td>{{ c.industry }}</td>
+<td>{{ c.location }}</td>
+
+<td>
+
+<a class="action-btn view-btn"
+href="/admin/company/{{ c.user_id }}">
+View
+</a>
+
+<a class="action-btn switch-btn"
+href="/admin/user/{{ c.user_id }}/switch">
+Switch Status
+</a>
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</table>
+
+{% endblock %}

@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h2 class="title">Job Details</h2>
+
+<div class="job-details">
+
+<p><b>Job Title:</b> {{ job.title }}</p>
+<p><b>Company:</b> {{ job.company.company_name }}</p>
+<p><b>Description:</b> {{ job.description }}</p>
+<p><b>Skills:</b> {{ job.skills }}</p>
+<p><b>Salary:</b> {{ job.salary }}</p>
+
+</div>
+
+<hr>
+
+<h3 class="subtitle">Applications ({{ applications|length }})</h3>
+
+{% if applications %}
+
+<table border="1" cellpadding="10" cellspacing="0" class="application-table">
+
+<tr>
+<th>ID</th>
+<th>Student Name</th>
+<th>Email</th>
+<th>Department</th>
+<th>CGPA</th>
+<th>Status</th>
+<th>Applied Date</th>
+</tr>
+
+{% for app in applications %}
+
+<tr>
+<td>{{ app.id }}</td>
+<td>{{ app.student.user.name }}</td>
+<td>{{ app.student.user.email }}</td>
+<td>{{ app.student.department }}</td>
+<td>{{ app.student.cgpa }}</td>
+
+<td>
+<span class="status">{{ app.status }}</span>
+</td>
+
+<td>{{ app.applied_at.strftime("%d-%m-%Y") }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+{% else %}
+
+<p class="no-app"><em>No applications for this job.</em></p>
+{% endif %}
+
+<br>
+
+<a class="back-btn" href="/admin/company/{{ job.company.user_id }}">⬅ Back to Company</a>
+
+<style>
+
+
+
+.title{
+font-size:60px;
+margin-top:50px;
+margin-bottom:20px;
+margin-left: 90px;
+color:rgb(242, 22, 22);
+font-weight: 500;
+font-family: "pacifico",cursive;
+}
+
+.subtitle{
+margin-top:30px;
+margin-left: 100px;
+margin-bottom:15px;
+color:white;
+font-weight: 500;
+font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+font-size: 30px;
+font-size: 25px;
+font-style: oblique;
+}
+
+
+
+.job-details{
+background:#1f1f2e;
+padding:20px;
+margin-left: 55px;
+border-radius:8px;
+box-shadow:0 5px 12px rgba(0,0,0,0.4);
+color:white;
+width: 1000px;
+height: 300px;
+}
+
+.job-details p{
+               
+           color:#cfcccc;
+           font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+           font-weight: 500;
+           font-size: 30px;
+           font-style:oblique;
+           margin-right: 8px;      
+}
+
+.job-details b{
+             color:#ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            font-weight: 1000;
+            font-size: 35px;
+            font-style:normal;   
+}
+
+.application-table{
+width:100%;
+margin-top:15px;
+margin-left: 100px;
+border-collapse:collapse;
+background:#1f1f2e;
+color:white;
+}
+
+.application-table th{
+background:#2c2c3e;
+padding:12px;
+font-size:14px;
+text-align:left;
+}
+
+.application-table td{
+padding:12px;
+border-top:1px solid #333;
+}
+
+.application-table tr:hover{
+background:#2a2a3d;
+}
+
+/* status */
+
+.status{
+background:#3498db;
+padding:4px 10px;
+border-radius:5px;
+font-size:13px;
+}
+
+/* back button */
+
+.back-btn{
+display:inline-block;
+margin-top:20px;
+margin-left: 50px;
+padding:10px 16px;
+background:#16c81c;
+color:white;
+text-decoration:none;
+border-radius:6px;
+font-weight:bold;
+}
+
+.back-btn:hover{
+background:#e02e2e;
+}
+
+/* no application */
+
+.no-app{
+color:white;
+opacity:0.8;
+margin-top:10px;
+}
+
+.no-app em{
+         margin-left: 100px;
+         font-weight: 500;
+         font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+         font-size: 25px;
+         font-style: oblique;
+
+}
+
+hr{
+margin-top:25px;
+margin-bottom:25px;
+border:1px solid rgba(255,255,255,0.2);
+}
+
+</style>
+
+{% endblock %}

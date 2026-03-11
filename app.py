@@ -155,9 +155,9 @@ class Application(db.Model):
 
     student = db.relationship("StudentProfile", back_populates="applications")
     
-    
-# Routes
-
+########### 
+##Routes##
+###########
 
 
 @app.route("/")
@@ -165,38 +165,9 @@ def index():
     return render_template("index.html")
 
 
-# Route for job posting by company
-@app.route('/job-posting', methods=['GET', 'POST'])
-def job_post():
-
-    if request.method == 'POST':
-
-        if 'user_id' not in session:
-            return redirect('/login')
-
-        company = CompanyProfile.query.filter_by(user_id=session['user_id']).first()
-
-        if not company:
-            return "Please complete company profile first"
-
-        job = Job(
-            company_id=company.id,
-            title=request.form['title'],
-            experience=request.form['experience'],
-            description=request.form['description'],
-            skills=request.form['skills'],
-            salary=request.form['salary']
-        )
-
-        db.session.add(job)
-        db.session.commit()
-
-        return redirect('/company_dashboard')
-
-    return render_template('job_posting.html')
 
 
-# Registration and Login
+# Route for registration
 
 @app.route("/register", methods=["GET", "POST"])
 def register():
@@ -266,26 +237,16 @@ def login():
         elif user.role == "company":
             return redirect(url_for("company_dashboard"))
 
-        elif user.role == "employee":
+        elif user.role == "applicant":
             return redirect(url_for("student_dashboard"))
 
     return render_template("login.html")
 
-# Dashboards
+''''''''''''''
+##Dashboards##
+''''''''''''''
 
-@app.route("/company-details/<int:company_id>")
-def company_details(company_id):
-
-    # get company profile
-    company = CompanyProfile.query.filter_by(id=company_id).first()
-
-    if not company:
-        return "Company not found", 404
-
-    return render_template(
-        "company_details.html",
-        company=company
-    )
+#Company dashboard and related routes for job management, application management, student profile viewing etc.
 
 @app.route("/company_dashboard")
 def company_dashboard():
@@ -337,6 +298,43 @@ def company_dashboard():
         selected=all_selected
     )
 
+
+
+# Route for job posting by company
+
+@app.route('/job-posting', methods=['GET', 'POST'])
+def job_post():
+
+    if request.method == 'POST':
+
+        if 'user_id' not in session:
+            return redirect('/login')
+
+        company = CompanyProfile.query.filter_by(user_id=session['user_id']).first()
+
+        if not company:
+            return "Please complete company profile first"
+
+        job = Job(
+            company_id=company.id,
+            title=request.form['title'],
+            experience=request.form['experience'],
+            description=request.form['description'],
+            skills=request.form['skills'],
+            salary=request.form['salary']
+        )
+
+        db.session.add(job)
+        db.session.commit()
+
+        return redirect('/company_dashboard')
+
+    return render_template('job_posting.html')
+
+
+
+# Route for deleting job by company with application check and warning
+
 @app.route("/delete-job/<int:job_id>", methods=["POST"])
 def delete_job(job_id):
 
@@ -356,7 +354,7 @@ def delete_job(job_id):
     if not job:
         return "Job not found", 404
 
-    # 🔥 Check if applications exist
+    #Check if applications exist
     application_count = Application.query.filter_by(job_id=job.id).count()
 
     if application_count > 0:
@@ -373,7 +371,7 @@ def delete_job(job_id):
     return redirect("/company_dashboard")
 
 
-
+# Route for confirming job deletion after warning
 @app.route("/confirm-delete/<int:job_id>", methods=["POST"])
 def confirm_delete(job_id):
 
@@ -401,6 +399,7 @@ def confirm_delete(job_id):
 
     return redirect("/company_dashboard")
 
+# Route for registering/completing company profile after registration
 
 @app.route("/complete-company-profile", methods=["GET", "POST"])
 def complete_company_profile():
@@ -445,10 +444,7 @@ def complete_company_profile():
 
 
 
-
-
-
-
+# Route for viewing applications for a job by company
 
 @app.route("/job-applications/<int:job_id>")
 def view_applications(job_id):
@@ -458,6 +454,8 @@ def view_applications(job_id):
         "applications.html",
         applications=applications
     )
+
+# Route for viewing student profile and applications by company
 
 @app.route("/company/student/<int:student_id>")
 def view_student_profile(student_id):
@@ -493,7 +491,7 @@ def view_student_profile(student_id):
         total_applied=total_applied
     )
 
-    
+ # Route for switching application status by company (shortlist, select, reject)   
 @app.route("/switch-status/<int:app_id>/<string:action>")
 def switch_status(app_id, action):
     if "user_id" not in session:
@@ -523,7 +521,7 @@ def switch_status(app_id, action):
 
     return redirect(request.referrer)
 
-
+# Route for switching job status (open/close) by company
 @app.route("/switch-job/<int:job_id>")
 def switch_job(job_id):
 
@@ -562,7 +560,7 @@ def switch_job(job_id):
     # go back to dashboard
     return redirect("/company_dashboard")
 
-
+# Route for editing job by company
 @app.route("/edit-job/<int:job_id>", methods=["GET", "POST"])
 def edit_job(job_id):
 
@@ -614,7 +612,7 @@ def edit_job(job_id):
 
 
 
-#Student dashboard and job application
+#Student dashboard and related routes for job searching, applying, profile viewing etc.
 
 @app.route("/student_dashboard")
 def student_dashboard():
@@ -652,12 +650,58 @@ def student_dashboard():
             applied_jobs[app.job_id] = app.status
 
     return render_template(
-        "employee_dashboard.html",
+        "applicant_dashboard.html",
         student=student,
         jobs=jobs,
         applied_jobs=applied_jobs
     )
 
+# Route for completing student profile after registration
+@app.route("/complete-student-profile", methods=["GET", "POST"])
+def complete_student_profile():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user_id = session["user_id"]
+
+    student = StudentProfile.query.filter_by(user_id=user_id).first()
+
+    if request.method == "POST":
+
+        if not student:
+            student = StudentProfile(user_id=user_id)
+            db.session.add(student)
+
+        student.department = request.form["department"]
+        student.cgpa = request.form["cgpa"]
+        student.resume = request.form["resume"]
+
+        db.session.commit()
+
+        return redirect("/student_dashboard")
+
+    return render_template("complete-student-profile.html", student=student)
+
+
+
+# Route for viewing company details by students
+
+@app.route("/company-details/<int:company_id>")
+def company_details(company_id):
+
+    # get company profile
+    company = CompanyProfile.query.filter_by(id=company_id).first()
+
+    if not company:
+        return "Company not found", 404
+
+    return render_template(
+        "company_details.html",
+        company=company
+    )
+
+
+# Route for viewing application history by student
 @app.route("/application-history")
 def application_history():
 
@@ -680,6 +724,7 @@ def application_history():
         applications=applications
     )
 
+# Route for applying to a job by student with duplicate apply check
 @app.route("/apply-job/<int:job_id>")
 def apply_job(job_id):
     if "user_id" not in session:
@@ -711,42 +756,277 @@ def apply_job(job_id):
     return redirect("/student_dashboard")
 
 
-@app.route("/complete-student-profile", methods=["GET", "POST"])
-def complete_student_profile():
+
+#############
+#Admin routes methods for Apllications, Applicants, Companies, Jobs etc.
+#############
+
+# Admin dashboard
+@app.route("/admin_dashboard")
+def admin_dashboard():
+
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect("/login")
+
+    # search inputs
+    student_search = request.args.get("student_search")
+    company_search = request.args.get("company_search")
+
+    total_students = Users.query.filter_by(role="applicant").count()
+    total_companies = Users.query.filter_by(role="company").count()
+    total_jobs = Job.query.count()
+    total_applications = Application.query.count()
+
+    pending_companies = Users.query.filter_by(role="company", is_approved=False).all()
+    pending_jobs = Job.query.filter_by(is_approved=False).all()
+
+    #Student searching
+    students_query = Users.query.filter_by(role="applicant")
+
+    if student_search:
+        students_query = students_query.filter(
+            (Users.name.ilike(f"%{student_search}%")) |
+            (Users.email.ilike(f"%{student_search}%")) |
+            (Users.contact_number.ilike(f"%{student_search}%"))
+        )
+
+    all_students = students_query.all()
+
+    # Company searching
+    companies_query = Users.query.filter_by(role="company")
+
+    if company_search:
+        companies_query = companies_query.filter(
+            (Users.name.ilike(f"%{company_search}%")) |
+            (Users.email.ilike(f"%{company_search}%"))
+        )
+
+    all_companies = companies_query.all()
+
+    # jobs
+    all_jobs = Job.query.order_by(Job.posted_at.desc()).all()
+
+    return render_template(
+        "admin_dashboard.html",
+        total_students=total_students,
+        total_companies=total_companies,
+        total_jobs=total_jobs,
+        total_applications=total_applications,
+        pending_companies=pending_companies,
+        pending_jobs=pending_jobs,
+        all_students=all_students,
+        all_companies=all_companies,
+        all_jobs=all_jobs
+    )
+
+
+
+# Admin view for company details and operations like blacklist, approve, reject
+
+
+@app.route("/admin/company/<int:user_id>")
+def admin_view_company(user_id):
+
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect("/login")
+
+    user = Users.query.get_or_404(user_id)
+    company_profile = CompanyProfile.query.filter_by(user_id=user.id).first()
+
+    jobs = []
+    if company_profile:
+        jobs = Job.query.filter_by(company_id=company_profile.id).all()
+
+    return render_template(
+        "admin_company_details.html",
+        user=user,
+        company_profile=company_profile,
+        jobs=jobs
+    )
+
+# Route for approving company by admin
+@app.route("/admin/company/<int:user_id>/approve")
+def approve_company(user_id):
+
+    user = Users.query.get_or_404(user_id)
+    user.is_approved = True
+    db.session.commit()
+
+    return redirect("/admin_dashboard")
+
+
+# Route for blacklisting company by admin
+@app.route("/admin/company/<int:user_id>/blacklist")
+def blacklist_company(user_id):
+    user = Users.query.get_or_404(user_id)
+    user.is_active = False
+    db.session.commit()
+    return redirect("/admin_dashboard")
+
+#Routes for unblacklisting and rejecting company by admin
+@app.route("/admin/company/<int:user_id>/unblacklist")
+def unblacklist_company(user_id):
+    user = Users.query.get_or_404(user_id)
+    user.is_active = True
+    db.session.commit()
+    return redirect("/admin_dashboard")
+
+# Route for rejecting company by admin
+@app.route("/admin/company/<int:user_id>/reject")
+def reject_company(user_id):
+
+    user = Users.query.get_or_404(user_id)
+    user.is_active = False
+    db.session.commit()
+
+    return redirect("/admin_dashboard")
+
+
+
+# Admin view for student details and applications
+
+@app.route("/admin/student/<int:user_id>")
+def admin_view_student(user_id):
+
+    # simple security check
     if "user_id" not in session:
         return redirect("/login")
 
-    user_id = session["user_id"]
+    if session.get("role") != "admin":
+        return "Unauthorized", 403
 
-    student = StudentProfile.query.filter_by(user_id=user_id).first()
+    # get user
+    user = Users.query.get_or_404(user_id)
 
-    if request.method == "POST":
+    # get student profile
+    student_profile = StudentProfile.query.filter_by(
+        user_id=user.id
+    ).first()
 
-        if not student:
-            student = StudentProfile(user_id=user_id)
-            db.session.add(student)
+    applications = []
 
-        student.department = request.form["department"]
-        student.cgpa = request.form["cgpa"]
-        student.resume = request.form["resume"]
+    if student_profile:
+        applications = Application.query.filter_by(
+            student_id=student_profile.id
+        ).all()
 
-        db.session.commit()
+    return render_template(
+        "admin_student_details.html",
+        user=user,
+        student_profile=student_profile,
+        applications=applications
+    )
 
-        return redirect("/student_dashboard")
+# Route for blacklisting student by admin
+@app.route("/admin/student/<int:user_id>/blacklist")
+def blacklist_student(user_id):
+    user = Users.query.get_or_404(user_id)
+    user.is_active = False
+    db.session.commit()
+    return redirect("/admin_dashboard")
 
-    return render_template("complete-student-profile.html", student=student)
+# Route for unblacklisting student by admin
+@app.route("/admin/student/<int:user_id>/unblacklist")
+def unblacklist_student(user_id):
+    user = Users.query.get_or_404(user_id)
+    user.is_active = True
+    db.session.commit()
+    return redirect("/admin_dashboard")
 
 
+# Admin view for job details and applications
 
-#Admin routes for approving companies and jobs
+@app.route("/admin/job/<int:job_id>/applications")
+def admin_job_applications(job_id):
 
-@app.route("/admin_dashboard")
-def admin_dashboard():
-    return "This is admin dashboard"
+    # security check
+    if "user_id" not in session or session.get("role") != "admin":
+        return redirect("/login")
+
+    job = Job.query.get_or_404(job_id)
+
+    applications = Application.query.filter_by(job_id=job.id).all()
+
+    return render_template(
+        "admin_job_applications.html",
+        job=job,
+        applications=applications
+    )
+
+# Routes for approving job by admin
+@app.route("/admin/job/<int:job_id>/approve")
+def approve_job(job_id):
+
+    job = Job.query.get_or_404(job_id)
+    job.is_approved = True
+    db.session.commit()
+
+    return redirect("/admin_dashboard")
+
+#Route for rejecting job by admin
+@app.route("/admin/job/<int:job_id>/reject")
+def reject_job(job_id):
+
+    job = Job.query.get_or_404(job_id)
+    job.is_closed = True
+    db.session.commit()
+
+    return redirect("/admin_dashboard")
 
 
+# Admin view for listing students and companies with search functionality
+
+@app.route("/admin/students")
+def view_students():
+
+    search = request.args.get("search")
+
+    query = Users.query.filter_by(role="applicant")
+
+    if search:
+        query = query.filter(
+            (Users.name.ilike(f"%{search}%")) |
+            (Users.email.ilike(f"%{search}%")) |
+            (Users.contact_number.ilike(f"%{search}%"))
+        )
+
+    students = query.all()
+
+    return render_template("admin_students.html", students=students)
 
 
+@app.route("/admin/companies")
+def view_companies():
+
+    search = request.args.get("search")
+
+    query = CompanyProfile.query
+
+    if search:
+        query = query.filter(
+            (CompanyProfile.company_name.ilike(f"%{search}%")) |
+            (CompanyProfile.industry.ilike(f"%{search}%"))
+        )
+
+    companies = query.all()
+
+    return render_template("admin_companies.html", companies=companies)
+
+# Route for switching user active status by admin (blacklist/unblacklist)
+@app.route("/admin/user/<int:user_id>/switch")
+def switch_user(user_id):
+
+    user = Users.query.get_or_404(user_id)
+
+    # switch active status
+    user.is_active = not user.is_active
+
+    db.session.commit()
+
+    return redirect(request.referrer)
+
+
+# Route for logout
 @app.route("/logout")
 def logout():
     session.clear()
